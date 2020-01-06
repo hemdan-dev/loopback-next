@@ -68,6 +68,19 @@ export class Context extends EventEmitter {
   protected readonly registry: Map<string, Binding> = new Map();
 
   /**
+   * Index for bindings by tag names
+   */
+  protected readonly bindingsIndexedByTag: Map<
+    string,
+    Set<Readonly<Binding<unknown>>>
+  > = new Map();
+
+  /**
+   * A listener for binding events
+   */
+  private bindingEventListener: (binding: Binding<unknown>, op: string) => void;
+
+  /**
    * Parent context
    */
   protected _parent?: Context;
@@ -134,6 +147,11 @@ export class Context extends EventEmitter {
     }
     this._parent = _parent;
     this.name = name ?? uuidv1();
+    this.bindingEventListener = (binding: Binding<unknown>, op: string) => {
+      if (op === 'tag') {
+        this.updateTagIndexForBinding(binding);
+      }
+    };
   }
 
   /**
@@ -358,7 +376,10 @@ export class Context extends EventEmitter {
     if (existingBinding !== binding) {
       if (existingBinding != null) {
         this.emit('unbind', existingBinding, this);
+        this.removeTagIndexForBinding(existingBinding);
       }
+      this.updateTagIndexForBinding(binding);
+      binding.on('changed', this.bindingEventListener);
       this.emit('bind', binding, this);
     }
     return this;
@@ -505,6 +526,8 @@ export class Context extends EventEmitter {
     if (binding?.isLocked)
       throw new Error(`Cannot unbind key "${key}" of a locked binding`);
     this.registry.delete(key);
+    binding.removeListener('changed', this.bindingEventListener);
+    this.removeTagIndexForBinding(binding);
     this.emit('unbind', binding, this);
     return true;
   }
@@ -608,6 +631,32 @@ export class Context extends EventEmitter {
   }
 
   /**
+   * Remove tag index for the given binding
+   * @param binding - Binding object
+   */
+  private removeTagIndexForBinding(binding: Readonly<Binding<unknown>>) {
+    for (const [, bindings] of this.bindingsIndexedByTag) {
+      bindings.delete(binding);
+    }
+  }
+
+  /**
+   * Update tag index for the given binding
+   * @param binding - Binding object
+   */
+  private updateTagIndexForBinding(binding: Readonly<Binding<unknown>>) {
+    this.removeTagIndexForBinding(binding);
+    for (const tag of binding.tagNames) {
+      let bindings = this.bindingsIndexedByTag.get(tag);
+      if (bindings == null) {
+        bindings = new Set();
+        this.bindingsIndexedByTag.set(tag, bindings);
+      }
+      bindings.add(binding);
+    }
+  }
+
+  /**
    * Check if a binding exists with the given key in the local context without
    * delegating to the parent context
    * @param key - Binding key
@@ -686,7 +735,36 @@ export class Context extends EventEmitter {
   findByTag<ValueType = BoundValue>(
     tagFilter: BindingTag | RegExp,
   ): Readonly<Binding<ValueType>>[] {
-    return this.find(filterByTag(tagFilter));
+    if (
+      tagFilter instanceof RegExp ||
+      (typeof tagFilter === 'string' &&
+        (tagFilter.includes('*') || tagFilter.includes('?')))
+    ) {
+      return this.find(filterByTag(tagFilter));
+    }
+    return this._findByTagIndex(tagFilter);
+  }
+
+  protected _findByTagIndex<ValueType = BoundValue>(
+    tag: BindingTag,
+  ): Readonly<Binding<ValueType>>[] {
+    let tagMap: Record<string, unknown>;
+    if (typeof tag === 'string') {
+      tagMap = {[tag]: tag};
+    } else {
+      tagMap = tag;
+    }
+    const bindings: Set<Readonly<Binding<ValueType>>> = new Set();
+    for (const t of Object.keys(tagMap)) {
+      const bindingsByTag = this.bindingsIndexedByTag.get(t);
+      if (bindingsByTag == null) continue;
+      bindingsByTag.forEach(b => {
+        if (filterByTag(tag)(b)) bindings.add(b as Binding<ValueType>);
+      });
+    }
+    const currentBindings = Array.from(bindings);
+    const parentBindings = this._parent && this._parent?._findByTagIndex(tag);
+    return this._mergeWithParent(currentBindings, parentBindings);
   }
 
   protected _mergeWithParent<ValueType>(
