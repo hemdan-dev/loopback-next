@@ -4,6 +4,7 @@
 // License text available at https://opensource.org/licenses/MIT
 
 import debugFactory from 'debug';
+import {EventEmitter} from 'events';
 import {BindingAddress, BindingKey} from './binding-key';
 import {Context} from './context';
 import {createProxyWithInterceptors} from './interception-proxy';
@@ -148,7 +149,7 @@ type ValueGetter<T> = (
  * Binding represents an entry in the `Context`. Each binding has a key and a
  * corresponding value getter.
  */
-export class Binding<T = BoundValue> {
+export class Binding<T = BoundValue> extends EventEmitter {
   /**
    * Key of the binding
    */
@@ -199,6 +200,7 @@ export class Binding<T = BoundValue> {
   }
 
   constructor(key: BindingAddress<T>, public isLocked: boolean = false) {
+    super();
     BindingKey.validate(key);
     this.key = key.toString();
   }
@@ -362,6 +364,7 @@ export class Binding<T = BoundValue> {
         Object.assign(this.tagMap, t);
       }
     }
+    this.emit('changed', this, 'tag');
     return this;
   }
 
@@ -379,6 +382,7 @@ export class Binding<T = BoundValue> {
   inScope(scope: BindingScope): this {
     if (this._scope !== scope) this._clearCache();
     this._scope = scope;
+    this.emit('changed', this, 'scope');
     return this;
   }
 
@@ -409,6 +413,7 @@ export class Binding<T = BoundValue> {
       }
       return getValue(ctx, options);
     };
+    this.emit('changed', this, 'value');
   }
 
   /**
