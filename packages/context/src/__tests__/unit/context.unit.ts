@@ -29,8 +29,8 @@ class TestContext extends Context {
     const map = new Map(this.registry);
     return map;
   }
-  get parentEventListeners() {
-    return this._parentEventListeners;
+  get eventListener() {
+    return this.parentEventListener;
   }
 }
 
@@ -759,17 +759,7 @@ describe('Context', () => {
       childCtx.subscribe(() => {});
       // Now we have one observer
       expect(childCtx.observers!.size).to.eql(1);
-      // Two listeners are also added to the parent context
-      const parentEventListeners = childCtx.parentEventListeners!;
-      expect(parentEventListeners.size).to.eql(2);
-
-      // The map contains listeners added to the parent context
-      // Take a snapshot into `copy`
-      const copy = new Map(parentEventListeners);
-      for (const [key, val] of copy.entries()) {
-        expect(val).to.be.a.Function();
-        expect(ctx.listeners(key)).to.containEql(val);
-      }
+      expect(childCtx.eventListener).to.be.a.Function();
 
       // Now clear subscriptions
       childCtx.close();
@@ -777,9 +767,7 @@ describe('Context', () => {
       // observers are gone
       expect(childCtx.observers).to.be.undefined();
       // listeners are removed from parent context
-      for (const [key, val] of copy.entries()) {
-        expect(ctx.listeners(key)).to.not.containEql(val);
-      }
+      expect(childCtx.eventListener).to.be.undefined();
     });
 
     it('keeps parent and bindings', () => {
@@ -788,6 +776,17 @@ describe('Context', () => {
       childCtx.close();
       expect(childCtx.parent).to.equal(ctx);
       expect(childCtx.contains('foo'));
+    });
+  });
+
+  describe('maxListeners', () => {
+    it('defaults to Infinity', () => {
+      expect(ctx.getMaxListeners()).to.equal(Infinity);
+    });
+
+    it('can be changed', () => {
+      ctx.setMaxListeners(128);
+      expect(ctx.getMaxListeners()).to.equal(128);
     });
   });
 

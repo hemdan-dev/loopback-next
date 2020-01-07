@@ -21,8 +21,8 @@ const setImmediateAsync = promisify(setImmediate);
  * for assertions
  */
 class TestContext extends Context {
-  get parentEventListeners() {
-    return this._parentEventListeners;
+  get eventListener() {
+    return this.parentEventListener;
   }
   /**
    * Wait until the context event queue is empty or an error is thrown
@@ -63,10 +63,9 @@ describe('Context', () => {
 
     it('registers observers on context with parent', () => {
       const childCtx = new TestContext(ctx, 'child');
-      expect(childCtx.parentEventListeners).to.be.undefined();
+      expect(childCtx.eventListener).to.be.undefined();
       childCtx.subscribe(nonMatchingObserver);
-      expect(childCtx.parentEventListeners!.has('bind')).to.be.true();
-      expect(childCtx.parentEventListeners!.has('unbind')).to.be.true();
+      expect(childCtx.eventListener).to.be.a.Function();
       expect(childCtx.isSubscribed(nonMatchingObserver)).to.true();
       expect(ctx.isSubscribed(nonMatchingObserver)).to.false();
     });
@@ -84,12 +83,8 @@ describe('Context', () => {
     it('un-registers observers on context chain during close', () => {
       const childCtx = new TestContext(ctx, 'child');
       childCtx.subscribe(nonMatchingObserver);
-      const parentEventListeners = new Map(childCtx.parentEventListeners!);
       childCtx.close();
-      for (const [event, listener] of parentEventListeners) {
-        expect(ctx.listeners(event)).to.not.containEql(listener);
-      }
-      expect(childCtx.parentEventListeners).to.be.undefined();
+      expect(childCtx.eventListener).to.be.undefined();
       expect(childCtx.isSubscribed(nonMatchingObserver)).to.false();
     });
 

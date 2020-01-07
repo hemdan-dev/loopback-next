@@ -140,6 +140,14 @@ export type BindingTag = TagMap | string;
  */
 export type BindingTemplate<T = unknown> = (binding: Binding<T>) => void;
 
+/**
+ * Event listeners for binding events
+ */
+export type BindingEventListener = (
+  binding: Binding<unknown>,
+  event: string,
+) => void;
+
 type ValueGetter<T> = (
   ctx: Context,
   options: ResolutionOptions,
