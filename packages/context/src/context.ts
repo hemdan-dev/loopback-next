@@ -6,7 +6,7 @@
 import debugFactory from 'debug';
 import {EventEmitter} from 'events';
 import {v1 as uuidv1} from 'uuid';
-import {Binding, BindingTag, BindingEventListener} from './binding';
+import {Binding, BindingEventListener, BindingTag} from './binding';
 import {
   ConfigurationResolver,
   DefaultConfigurationResolver,
@@ -33,6 +33,7 @@ import {
   BoundValue,
   getDeepProperty,
   isPromiseLike,
+  MapObject,
   ValueOrPromise,
 } from './value-promise';
 
@@ -744,24 +745,45 @@ export class Context extends EventEmitter {
     return this._findByTagIndex(tagFilter);
   }
 
+  /**
+   * Find bindings by tag leveraging indexes
+   * @param tag - Tag name or name/value pairs
+   */
   protected _findByTagIndex<ValueType = BoundValue>(
-    tag: BindingTag,
+    tag: string | MapObject<unknown>,
   ): Readonly<Binding<ValueType>>[] {
-    let tagMap: Record<string, unknown>;
+    let tagNames: string[];
     if (typeof tag === 'string') {
-      tagMap = {[tag]: tag};
+      tagNames = [tag];
     } else {
-      tagMap = tag;
+      tagNames = Object.keys(tag);
     }
-    const bindings: Set<Readonly<Binding<ValueType>>> = new Set();
-    for (const t of Object.keys(tagMap)) {
+    let filter: BindingFilter | undefined;
+    let bindings: Set<Readonly<Binding<ValueType>>> | undefined;
+    for (const t of tagNames) {
       const bindingsByTag = this.bindingsIndexedByTag.get(t);
-      if (bindingsByTag == null) continue;
-      bindingsByTag.forEach(b => {
-        if (filterByTag(tag)(b)) bindings.add(b as Binding<ValueType>);
-      });
+      if (bindingsByTag == null) break; // One of the tags is not found
+      filter = filter ?? filterByTag(tag);
+      const matched = new Set(Array.from(bindingsByTag).filter(filter)) as Set<
+        Readonly<Binding<ValueType>>
+      >;
+      if (matched.size === 0) break; // One of the tag name/value is not found
+      if (bindings == null) {
+        // First set of bindings matching the tag
+        bindings = matched;
+      } else {
+        // Now need to find intersected bindings against visited tags
+        const intersection = new Set<Readonly<Binding<ValueType>>>();
+        bindings.forEach(b => {
+          if (matched.has(b)) {
+            intersection.add(b);
+          }
+        });
+        bindings = intersection;
+        if (bindings.size === 0) break;
+      }
     }
-    const currentBindings = Array.from(bindings);
+    const currentBindings = bindings == null ? [] : Array.from(bindings);
     const parentBindings = this._parent && this._parent?._findByTagIndex(tag);
     return this._mergeWithParent(currentBindings, parentBindings);
   }

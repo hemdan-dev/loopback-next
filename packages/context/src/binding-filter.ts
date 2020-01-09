@@ -5,6 +5,7 @@
 
 import {Binding, BindingTag} from './binding';
 import {BindingAddress} from './binding-key';
+import {MapObject} from './value-promise';
 
 /**
  * A function that filters bindings. It returns `true` to select a given
@@ -64,22 +65,39 @@ export function isBindingAddress(
  * @param tagPattern - Binding tag name, regexp, or object
  */
 export function filterByTag(tagPattern: BindingTag | RegExp): BindingFilter {
-  if (typeof tagPattern === 'string' || tagPattern instanceof RegExp) {
-    const regexp =
-      typeof tagPattern === 'string'
-        ? wildcardToRegExp(tagPattern)
-        : tagPattern;
-    return b => Array.from(b.tagNames).some(t => regexp!.test(t));
-  } else {
-    return b => {
-      for (const t in tagPattern) {
-        // One tag name/value does not match
-        if (b.tagMap[t] !== tagPattern[t]) return false;
-      }
-      // All tag name/value pairs match
-      return true;
-    };
+  let regex: RegExp | undefined = undefined;
+  if (tagPattern instanceof RegExp) {
+    // RegExp for tag names
+    regex = tagPattern;
   }
+  if (
+    typeof tagPattern === 'string' &&
+    (tagPattern.includes('*') || tagPattern.includes('?'))
+  ) {
+    // Wildcard tag name
+    regex = wildcardToRegExp(tagPattern);
+  }
+
+  if (regex != null) {
+    // RegExp or wildcard match
+    return b => b.tagNames.some(t => regex!.test(t));
+  }
+
+  // Plain tag string match
+  if (typeof tagPattern === 'string') {
+    return b => b.tagNames.includes(tagPattern);
+  }
+
+  // Match tag name/value pairs
+  const tagMap = tagPattern as MapObject<unknown>;
+  return b => {
+    for (const t in tagPattern) {
+      // One tag name/value does not match
+      if (b.tagMap[t] !== tagMap[t]) return false;
+    }
+    // All tag name/value pairs match
+    return true;
+  };
 }
 
 /**

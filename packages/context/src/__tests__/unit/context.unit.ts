@@ -316,6 +316,34 @@ describe('Context', () => {
       expect(result).to.be.eql([b1]);
     });
 
+    it('returns matching binding for multiple tags', () => {
+      const b1 = ctx
+        .bind('controllers.ProductController')
+        .tag({name: 'my-controller'})
+        .tag('controller');
+      ctx.bind('controllers.OrderController').tag('controller');
+      ctx.bind('dataSources.mysql').tag({dbType: 'mysql'});
+      const result = ctx.findByTag({
+        name: 'my-controller',
+        controller: 'controller',
+      });
+      expect(result).to.be.eql([b1]);
+    });
+
+    it('returns empty array if one of the tags does not match', () => {
+      ctx
+        .bind('controllers.ProductController')
+        .tag({name: 'my-controller'})
+        .tag('controller');
+      ctx.bind('controllers.OrderController').tag('controller');
+      ctx.bind('dataSources.mysql').tag({dbType: 'mysql'});
+      const result = ctx.findByTag({
+        controller: 'controller',
+        name: 'your-controller',
+      });
+      expect(result).to.be.eql([]);
+    });
+
     it('returns empty array if no matching tag value is found', () => {
       ctx.bind('controllers.ProductController').tag({name: 'my-controller'});
       ctx.bind('controllers.OrderController').tag('controller');
