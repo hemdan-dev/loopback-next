@@ -59,10 +59,13 @@ import {iterator, multiple} from 'p-event';
 
 const debug = debugFactory('loopback:context');
 
+/**
+ * Synchronous event listener for the `Context` as en event emitter
+ */
 export type ContextEventListener = (
-  binding: Readonly<Binding<unknown>>,
-  context: Context,
-  event: string,
+  binding: Readonly<Binding<unknown>>, // Binding to be added or removed
+  context: Context, // The source context
+  event: string, // 'bind' or 'unbind'
 ) => void;
 
 /**
@@ -93,12 +96,20 @@ export class Context extends EventEmitter {
   private bindingEventListener: BindingEventListener;
 
   /**
+   * A listener to maintain tag index for bindings
+   */
+  private tagIndexListener: ContextEventListener;
+
+  /**
    * Parent context
    */
   protected _parent?: Context;
 
   protected configResolver: ConfigurationResolver;
 
+  /**
+   * A listener to watch parent context events
+   */
   protected parentEventListener?: ContextEventListener;
 
   /**
@@ -153,11 +164,30 @@ export class Context extends EventEmitter {
     }
     this._parent = _parent;
     this.name = name ?? uuidv1();
+    this.setupTagIndexForBindings();
+  }
+
+  /**
+   * Set up context/binding listeners and refresh index for bindings by tag
+   */
+  private setupTagIndexForBindings() {
     this.bindingEventListener = (binding, event) => {
       if (event === 'tag') {
         this.updateTagIndexForBinding(binding);
       }
     };
+    this.tagIndexListener = (binding, context, event) => {
+      if (context !== this) return;
+      if (event === 'bind') {
+        this.updateTagIndexForBinding(binding);
+        binding.on('changed', this.bindingEventListener);
+      } else if (event === 'unbind') {
+        this.removeTagIndexForBinding(binding);
+        binding.removeListener('changed', this.bindingEventListener);
+      }
+    };
+    this.on('bind', this.tagIndexListener);
+    this.on('unbind', this.tagIndexListener);
   }
 
   /**
@@ -382,10 +412,7 @@ export class Context extends EventEmitter {
     if (existingBinding !== binding) {
       if (existingBinding != null) {
         this.emit('unbind', existingBinding, this, 'unbind');
-        this.removeTagIndexForBinding(existingBinding);
       }
-      this.updateTagIndexForBinding(binding);
-      binding.on('changed', this.bindingEventListener);
       this.emit('bind', binding, this, 'bind');
     }
     return this;
@@ -532,8 +559,6 @@ export class Context extends EventEmitter {
     if (binding?.isLocked)
       throw new Error(`Cannot unbind key "${key}" of a locked binding`);
     this.registry.delete(key);
-    binding.removeListener('changed', this.bindingEventListener);
-    this.removeTagIndexForBinding(binding);
     this.emit('unbind', binding, this, 'unbind');
     return true;
   }
@@ -582,6 +607,8 @@ export class Context extends EventEmitter {
       this._parent.removeListener('unbind', this.parentEventListener);
       this.parentEventListener = undefined;
     }
+    this.removeListener('bind', this.tagIndexListener);
+    this.removeListener('unbind', this.tagIndexListener);
   }
 
   /**

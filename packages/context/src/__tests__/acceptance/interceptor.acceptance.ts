@@ -187,7 +187,7 @@ describe('Interceptor', () => {
     }
 
     // No listeners yet
-    expect(ctx.listenerCount('bind')).to.eql(0);
+    expect(ctx.listenerCount('bind')).to.eql(1);
     const controller = new MyController();
 
     // Run the invocation 5 times
@@ -208,7 +208,7 @@ describe('Interceptor', () => {
 
     // Listeners added by invocation context are gone now
     // There is one left for ctx.observers
-    expect(ctx.listenerCount('bind')).to.eql(1);
+    expect(ctx.listenerCount('bind')).to.eql(2);
   });
 
   it('invokes static interceptors', async () => {
