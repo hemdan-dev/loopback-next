@@ -11,7 +11,12 @@ import {
   ConfigurationResolver,
   DefaultConfigurationResolver,
 } from './binding-config';
-import {BindingFilter, filterByKey, filterByTag} from './binding-filter';
+import {
+  BindingFilter,
+  filterByKey,
+  filterByTag,
+  isBindingTagFilter,
+} from './binding-filter';
 import {BindingAddress, BindingKey} from './binding-key';
 import {BindingComparator} from './binding-sorter';
 import {
@@ -707,6 +712,11 @@ export class Context extends EventEmitter {
   find<ValueType = BoundValue>(
     pattern?: string | RegExp | BindingFilter,
   ): Readonly<Binding<ValueType>>[] {
+    // Optimize if the binding filter is for tags
+    if (typeof pattern === 'function' && isBindingTagFilter(pattern)) {
+      return this._findByTagIndex(pattern.bindingTag);
+    }
+
     const bindings: Readonly<Binding<ValueType>>[] = [];
     const filter = filterByKey(pattern);
 
@@ -735,14 +745,7 @@ export class Context extends EventEmitter {
   findByTag<ValueType = BoundValue>(
     tagFilter: BindingTag | RegExp,
   ): Readonly<Binding<ValueType>>[] {
-    if (
-      tagFilter instanceof RegExp ||
-      (typeof tagFilter === 'string' &&
-        (tagFilter.includes('*') || tagFilter.includes('?')))
-    ) {
-      return this.find(filterByTag(tagFilter));
-    }
-    return this._findByTagIndex(tagFilter);
+    return this.find(filterByTag(tagFilter));
   }
 
   /**
