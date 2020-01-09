@@ -37,7 +37,7 @@ export class OrderRepository extends DefaultCrudRepository<
 `;
 
 exports[
-  `lb4 relation checks generated source class repository  answers {"relationType":"belongsTo","sourceModel":"OrderClass","destinationModel":"CustomerClass","registerInclusionResolver":true} generates OrderClass repository file with different inputs 1`
+  `lb4 relation checks generated source class repository  answers {"relationType":"belongsTo","sourceModel":"OrderClass","destinationModel":"CustomerClass","relationName":"customer","registerInclusionResolver":true} generates OrderClass repository file with different inputs 1`
 ] = `
 import {DefaultCrudRepository, repository, BelongsToAccessor} from '@loopback/repository';
 import {OrderClass, CustomerClass} from '../models';
@@ -50,19 +50,19 @@ export class OrderClassRepository extends DefaultCrudRepository<
   typeof OrderClass.prototype.orderNumber
 > {
 
-  public readonly customerClassCustNumber: BelongsToAccessor<CustomerClass, typeof OrderClass.prototype.orderNumber>;
+  public readonly customer: BelongsToAccessor<CustomerClass, typeof OrderClass.prototype.orderNumber>;
 
   constructor(@inject('datasources.myDB') dataSource: MyDBDataSource, @repository.getter('CustomerClassRepository') protected customerClassRepositoryGetter: Getter<CustomerClassRepository>,) {
     super(OrderClass, dataSource);
-    this.customerClassCustNumber = this.createBelongsToAccessorFor('customerClassCustNumber', customerClassRepositoryGetter,);
-    this.registerInclusionResolver('customerClassCustNumber', this.customerClassCustNumber.inclusionResolver);
+    this.customer = this.createBelongsToAccessorFor('customer', customerClassRepositoryGetter,);
+    this.registerInclusionResolver('customer', this.customer.inclusionResolver);
   }
 }
 
 `;
 
 exports[
-  `lb4 relation checks generated source class repository  answers {"relationType":"belongsTo","sourceModel":"OrderClassType","destinationModel":"CustomerClassType","registerInclusionResolver":false} generates OrderClassType repository file with different inputs 1`
+  `lb4 relation checks generated source class repository  answers {"relationType":"belongsTo","sourceModel":"OrderClassType","destinationModel":"CustomerClassType","relationName":"customer","registerInclusionResolver":false} generates OrderClassType repository file with different inputs 1`
 ] = `
 import {DefaultCrudRepository, repository, BelongsToAccessor} from '@loopback/repository';
 import {OrderClassType, CustomerClassType} from '../models';
@@ -75,11 +75,11 @@ export class OrderClassTypeRepository extends DefaultCrudRepository<
   typeof OrderClassType.prototype.orderString
 > {
 
-  public readonly customerClassTypeCustNumber: BelongsToAccessor<CustomerClassType, typeof OrderClassType.prototype.orderString>;
+  public readonly customer: BelongsToAccessor<CustomerClassType, typeof OrderClassType.prototype.orderString>;
 
   constructor(@inject('datasources.myDB') dataSource: MyDBDataSource, @repository.getter('CustomerClassTypeRepository') protected customerClassTypeRepositoryGetter: Getter<CustomerClassTypeRepository>,) {
     super(OrderClassType, dataSource);
-    this.customerClassTypeCustNumber = this.createBelongsToAccessorFor('customerClassTypeCustNumber', customerClassTypeRepositoryGetter,);
+    this.customer = this.createBelongsToAccessorFor('customer', customerClassTypeRepositoryGetter,);
   }
 }
 
@@ -137,7 +137,7 @@ export * from './order-customer.controller';
 `;
 
 exports[
-  `lb4 relation checks if the controller file created  answers {"relationType":"belongsTo","sourceModel":"OrderClass","destinationModel":"CustomerClass"} checks controller content with belongsTo relation 1`
+  `lb4 relation checks if the controller file created  answers {"relationType":"belongsTo","sourceModel":"OrderClass","destinationModel":"CustomerClass","relationName":"my_customer"} checks controller content with belongsTo relation 1`
 ] = `
 import {
   repository,
@@ -181,60 +181,9 @@ export class OrderClassCustomerClassController {
 `;
 
 exports[
-  `lb4 relation checks if the controller file created  answers {"relationType":"belongsTo","sourceModel":"OrderClass","destinationModel":"CustomerClass"} the new controller file added to index.ts file 1`
+  `lb4 relation checks if the controller file created  answers {"relationType":"belongsTo","sourceModel":"OrderClass","destinationModel":"CustomerClass","relationName":"my_customer"} the new controller file added to index.ts file 1`
 ] = `
 export * from './order-class-customer-class.controller';
-
-`;
-
-exports[
-  `lb4 relation checks if the controller file created  answers {"relationType":"belongsTo","sourceModel":"OrderClassType","destinationModel":"CustomerClassType"} checks controller content with belongsTo relation 1`
-] = `
-import {
-  repository,
-} from '@loopback/repository';
-import {
-  param,
-  get,
-  getModelSchemaRef,
-} from '@loopback/rest';
-import {
-  OrderClassType,
-  CustomerClassType,
-} from '../models';
-import {OrderClassTypeRepository} from '../repositories';
-
-export class OrderClassTypeCustomerClassTypeController {
-  constructor(
-    @repository(OrderClassTypeRepository)
-    public orderClassTypeRepository: OrderClassTypeRepository,
-  ) { }
-
-  @get('/order-class-types/{id}/customer-class-type', {
-    responses: {
-      '200': {
-        description: 'CustomerClassType belonging to OrderClassType',
-        content: {
-          'application/json': {
-            schema: {type: 'array', items: getModelSchemaRef(CustomerClassType)},
-          },
-        },
-      },
-    },
-  })
-  async getCustomerClassType(
-    @param.path.string('id') id: typeof OrderClassType.prototype.orderString,
-  ): Promise<CustomerClassType> {
-    return this.orderClassTypeRepository.customerClassType(id);
-  }
-}
-
-`;
-
-exports[
-  `lb4 relation checks if the controller file created  answers {"relationType":"belongsTo","sourceModel":"OrderClassType","destinationModel":"CustomerClassType"} the new controller file added to index.ts file 1`
-] = `
-export * from './order-class-type-customer-class-type.controller';
 
 `;
 
@@ -351,64 +300,6 @@ export class Order extends Entity {
   customerId: number;
 
   constructor(data?: Partial<Order>) {
-    super(data);
-  }
-}
-
-`;
-
-exports[
-  `lb4 relation generates model relation with default values answers {"relationType":"belongsTo","sourceModel":"OrderClass","destinationModel":"CustomerClass","relationName":"customer"} has correct default imports 1`
-] = `
-import {Entity, model, property, belongsTo} from '@loopback/repository';
-import {CustomerClass} from './customer-class.model';
-
-@model()
-export class OrderClass extends Entity {
-  @property({
-    type: 'number',
-    id: true,
-  })
-  orderNumber?: number;
-
-  @property({
-    type: 'string',
-  })
-  name?: string;
-
-  @belongsTo(() => CustomerClass, {name: 'customer'})
-  customerClassCustNumber: number;
-
-  constructor(data?: Partial<OrderClass>) {
-    super(data);
-  }
-}
-
-`;
-
-exports[
-  `lb4 relation generates model relation with default values answers {"relationType":"belongsTo","sourceModel":"OrderClassType","destinationModel":"CustomerClassType","relationName":"customer"} has correct default imports 1`
-] = `
-import {Entity, model, property, belongsTo} from '@loopback/repository';
-import {CustomerClassType} from './customer-class-type.model';
-
-@model()
-export class OrderClassType extends Entity {
-  @property({
-    type: 'string',
-    id: true,
-  })
-  orderString: string;
-
-  @property({
-    type: 'string',
-  })
-  name?: string;
-
-  @belongsTo(() => CustomerClassType, {name: 'customer'})
-  customerClassTypeCustNumber: number;
-
-  constructor(data?: Partial<OrderClassType>) {
     super(data);
   }
 }
