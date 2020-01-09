@@ -125,12 +125,8 @@ module.exports = class BelongsToRelationGenerator extends BaseRelationGenerator 
         arguments: [`() =>  ${className}`],
       },
     ];
-    // except the customized relation name, also need to check if the property name is the same as relation name
-    // or it will get 'navigational property' error when creating instances
-    if (
-      defaultRelationName !== relationName ||
-      relationName === sourceKeyName
-    ) {
+    // already checked if the relation name is the same as the source key before
+    if (defaultRelationName !== relationName) {
       relationDecorator = [
         {
           name: 'belongsTo',

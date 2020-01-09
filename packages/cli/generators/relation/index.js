@@ -131,8 +131,9 @@ module.exports = class RelationGenerator extends ArtifactGenerator {
     switch (this.artifactInfo.relationType) {
       case relationUtils.relationType.belongsTo:
         // this is how the belongsToAccessor generates the default relation name
-        defaultRelationName = utils.camelCase(
-          this.artifactInfo.sourceKeyName.replace(/Id$/, ''),
+        defaultRelationName = this.artifactInfo.sourceKeyName.replace(
+          /Id$/,
+          '',
         );
         break;
       case relationUtils.relationType.hasMany:
@@ -357,6 +358,7 @@ module.exports = class RelationGenerator extends ArtifactGenerator {
           message: PROMPT_MESSAGE_SOURCE_KEY_NAME,
           when: this.artifactInfo.relationName === undefined,
           default: this.artifactInfo.defaultSourceKeyName,
+          validate: utils.validateKeyName,
         },
       ]).then(props => {
         debug(`props after relation name prompt: ${inspect(props)}`);
@@ -412,6 +414,7 @@ module.exports = class RelationGenerator extends ArtifactGenerator {
           message: PROMPT_MESSAGE_FOREIGN_KEY_NAME,
           default: this.artifactInfo.defaultForeignKeyName,
           when: this.artifactInfo.foreignKeyName === undefined,
+          validate: utils.validateKeyName,
         },
       ]).then(props => {
         debug(`props after foreign key name prompt: ${inspect(props)}`);
@@ -450,10 +453,16 @@ module.exports = class RelationGenerator extends ArtifactGenerator {
         message: msg,
         when: this.artifactInfo.relationName === undefined,
         default: this.artifactInfo.defaultRelationName,
+        validate: inputName =>
+          utils.validateRelationName(
+            inputName,
+            this.artifactInfo.relationType,
+            this.artifactInfo.sourceKeyName,
+          ),
       },
     ]).then(props => {
       debug(`props after relation name prompt: ${inspect(props)}`);
-      // checks if the relation name already exist
+      // checks if the relation name already exists
       this.artifactInfo.srcRepositoryFile = path.resolve(
         this.artifactInfo.repoDir,
         utils.getRepositoryFileName(this.artifactInfo.sourceModel),
@@ -476,7 +485,7 @@ module.exports = class RelationGenerator extends ArtifactGenerator {
       ) {
         return this.exit(
           new Error(
-            `relation ${props.relationName} already exist in the repository ${this.artifactInfo.srcRepositoryClassName}.`,
+            `relation ${props.relationName} already exists in the repository ${this.artifactInfo.srcRepositoryClassName}.`,
           ),
         );
       }

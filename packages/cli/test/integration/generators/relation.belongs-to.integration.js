@@ -126,11 +126,13 @@ describe('lb4 relation', function() {
         relationType: 'belongsTo',
         sourceModel: 'OrderClass',
         destinationModel: 'CustomerClass',
+        relationName: 'customer',
       },
       {
         relationType: 'belongsTo',
         sourceModel: 'OrderClassType',
         destinationModel: 'CustomerClassType',
+        relationName: 'customer',
       },
     ];
 

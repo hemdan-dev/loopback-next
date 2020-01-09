@@ -98,7 +98,7 @@ describe('lb4 relation HasMany', function() {
     );
   });
 
-  context('Execute relation with exist relation name', () => {
+  context('Execute relation with existing relation name', () => {
     it('rejects if the relation name already exists in the repository', async () => {
       await sandbox.reset();
 
@@ -106,7 +106,6 @@ describe('lb4 relation HasMany', function() {
         relationType: 'hasMany',
         sourceModel: 'Order',
         destinationModel: 'Customer',
-
         relationName: 'myCustomer',
       };
 
@@ -125,7 +124,7 @@ describe('lb4 relation HasMany', function() {
           )
           .withPrompts(prompt),
       ).to.be.rejectedWith(
-        `relation myCustomer already exist in the repository OrderRepository.`,
+        `relation myCustomer already exists in the repository OrderRepository.`,
       );
     });
   });

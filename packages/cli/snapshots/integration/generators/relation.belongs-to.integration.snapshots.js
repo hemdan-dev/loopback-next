@@ -358,7 +358,7 @@ export class Order extends Entity {
 `;
 
 exports[
-  `lb4 relation generates model relation with default values answers {"relationType":"belongsTo","sourceModel":"OrderClass","destinationModel":"CustomerClass"} has correct default imports 1`
+  `lb4 relation generates model relation with default values answers {"relationType":"belongsTo","sourceModel":"OrderClass","destinationModel":"CustomerClass","relationName":"customer"} has correct default imports 1`
 ] = `
 import {Entity, model, property, belongsTo} from '@loopback/repository';
 import {CustomerClass} from './customer-class.model';
@@ -376,7 +376,7 @@ export class OrderClass extends Entity {
   })
   name?: string;
 
-  @belongsTo(() => CustomerClass, {name: 'customerClassCustNumber'})
+  @belongsTo(() => CustomerClass, {name: 'customer'})
   customerClassCustNumber: number;
 
   constructor(data?: Partial<OrderClass>) {
@@ -387,7 +387,7 @@ export class OrderClass extends Entity {
 `;
 
 exports[
-  `lb4 relation generates model relation with default values answers {"relationType":"belongsTo","sourceModel":"OrderClassType","destinationModel":"CustomerClassType"} has correct default imports 1`
+  `lb4 relation generates model relation with default values answers {"relationType":"belongsTo","sourceModel":"OrderClassType","destinationModel":"CustomerClassType","relationName":"customer"} has correct default imports 1`
 ] = `
 import {Entity, model, property, belongsTo} from '@loopback/repository';
 import {CustomerClassType} from './customer-class-type.model';
@@ -405,7 +405,7 @@ export class OrderClassType extends Entity {
   })
   name?: string;
 
-  @belongsTo(() => CustomerClassType, {name: 'customerClassTypeCustNumber'})
+  @belongsTo(() => CustomerClassType, {name: 'customer'})
   customerClassTypeCustNumber: number;
 
   constructor(data?: Partial<OrderClassType>) {
