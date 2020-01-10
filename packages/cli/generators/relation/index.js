@@ -358,7 +358,7 @@ module.exports = class RelationGenerator extends ArtifactGenerator {
           message: PROMPT_MESSAGE_SOURCE_KEY_NAME,
           when: this.artifactInfo.relationName === undefined,
           default: this.artifactInfo.defaultSourceKeyName,
-          validate: utils.validateKeyName,
+          // validate: utils.validateKeyName,
         },
       ]).then(props => {
         debug(`props after relation name prompt: ${inspect(props)}`);
@@ -414,7 +414,7 @@ module.exports = class RelationGenerator extends ArtifactGenerator {
           message: PROMPT_MESSAGE_FOREIGN_KEY_NAME,
           default: this.artifactInfo.defaultForeignKeyName,
           when: this.artifactInfo.foreignKeyName === undefined,
-          validate: utils.validateKeyName,
+          //validate: utils.validateKeyName,
         },
       ]).then(props => {
         debug(`props after foreign key name prompt: ${inspect(props)}`);
@@ -453,12 +453,12 @@ module.exports = class RelationGenerator extends ArtifactGenerator {
         message: msg,
         when: this.artifactInfo.relationName === undefined,
         default: this.artifactInfo.defaultRelationName,
-        validate: inputName =>
-          utils.validateRelationName(
-            inputName,
-            this.artifactInfo.relationType,
-            this.artifactInfo.sourceKeyName,
-          ),
+        // validate: inputName =>
+        //   utils.validateRelationName(
+        //     inputName,
+        //     this.artifactInfo.relationType,
+        //     this.artifactInfo.sourceKeyName,
+        //   ),
       },
     ]).then(props => {
       debug(`props after relation name prompt: ${inspect(props)}`);
